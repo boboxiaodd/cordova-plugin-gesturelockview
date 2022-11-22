@@ -1,10 +1,10 @@
 const exec = require('cordova/exec');
 const CDVLocalGestureLockView = {
-    show :function (options){
-        exec(null, null, 'CDVLocalGestureLockView','show',[options]);
+    show :function (success,options){
+        exec(success, null, 'CDVGestureLockView','show',[options]);
     },
-    hide : function (options){
-        exec(null, null, 'CDVLocalGestureLockView','hide',[options]);
+    hide : function (){
+        exec(null, null, 'CDVGestureLockView','hide',[]);
     },
 };
 module.exports = CDVLocalGestureLockView;

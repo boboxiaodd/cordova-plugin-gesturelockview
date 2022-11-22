@@ -1,105 +1,66 @@
 #import <Cordova/CDV.h>
-#import "showGestureLockView.h"
+#import "CDVGestureLockView.h"
+#import "TQGestureLockView.h"
 
-@interface showGestureLockView()
+@interface CDVGestureLockView() <TQGestureLockViewDelegate>
+@property (nonatomic, strong) TQGestureLockView *lockView;
+@property (nonatomic, strong) UIView *backdropView;
+@property (nonatomic, strong) CDVInvokedUrlCommand *cdvcommand;
 @end
 
-@implementation showGestureLockView
-- (void)showGestureLockView
-{
-    NSLog(@"--------------- init CDVLocalWWWW --------");
+@implementation CDVGestureLockView
 
-    NSFileManager *fileManager = [NSFileManager defaultManager];
-    NSString *srcPath = [[[NSBundle mainBundle] URLForResource:@"www" withExtension:@"zip"] absoluteString];
-    NSString *zipPath = [[NSURL URLWithString:srcPath] path];
-    NSArray *directoryPaths = [fileManager URLsForDirectory:NSLibraryDirectory inDomains:NSUserDomainMask];
-    NSURL *distPath = [[directoryPaths firstObject] URLByAppendingPathComponent:@"NoCloud/www"];
-    NSString *destinationPath = [distPath path];
-    NSError *error;
-    if([SSZipArchive unzipFileAtPath:zipPath toDestination:destinationPath overwrite:YES password:nil error:&error delegate:nil]) {
-        NSLog(@"unzip success!");
-    } else {
-        NSLog(@"%@ - %@", @"Error occurred during unzipping", [error localizedDescription]);
-    }
-}
-//进度条
-- (void)showProgress:(CDVInvokedUrlCommand *)command
+- (void)show:(CDVInvokedUrlCommand *)command
 {
-    if(_hud) return;
-    NSDictionary *options = [command.arguments objectAtIndex: 0];
-    BOOL is_progress = [[options valueForKey:@"is_progress"] boolValue];
-    NSString * title = [options objectForKey:@"title"] ?: @"加载中...";
-    _hud = [[JGProgressHUD alloc] init];
-    _hud.textLabel.text = title;
-    if(is_progress){
-        _hud.detailTextLabel.text = @"0% 完成";
-        _hud.indicatorView = [[JGProgressHUDPieIndicatorView alloc] init];
-        _hud.progress = 0.0f;
-    }else{
-        _hud.indicatorView = [[JGProgressHUDIndeterminateIndicatorView alloc] init];
-    }
-    _hud.style = JGProgressHUDStyleLight;
-    [_hud showInView:self.viewController.view];
-}
-- (void)setProgress:(CDVInvokedUrlCommand *)command
-{
-    if(!_hud) return;
-    NSDictionary *options = [command.arguments objectAtIndex: 0];
-    _hud.progress = [[options objectForKey:@"progress"] floatValue] ?: 0.0;
-    _hud.detailTextLabel.text = [NSString stringWithFormat:@"%.0f%@ 完成",_hud.progress * 100,@"%"];
-}
-- (void)hideProgress:(CDVInvokedUrlCommand *)command
-{
-    if(!_hud) return;
-    [_hud dismiss];
-    _hud = nil;
-}
+    _cdvcommand = command;
+    CGSize screenSize = [UIScreen mainScreen].bounds.size;
+    _backdropView = [[UIView alloc] initWithFrame: [UIScreen mainScreen].bounds];
+    _backdropView.backgroundColor = [UIColor whiteColor];
+    [self.viewController.view addSubview:_backdropView];
 
--(void) goSetting:(CDVInvokedUrlCommand *)command
-{
-    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:UIApplicationOpenSettingsURLString] options:@{} completionHandler:nil];
-}
--(void) goURL:(CDVInvokedUrlCommand *)command
-{
-    NSDictionary *options = [command.arguments objectAtIndex: 0];
-    NSString *urlstr = [options valueForKey:@"url"];
-    NSURL *url = [NSURL URLWithString:urlstr];
-    [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:^(BOOL res){
-        [self send_event:command withMessage:@{@"success":@"success"} Alive:NO State:YES];
-    }];
-}
+    CGFloat spacing = 40;
+    CGFloat diameter = (screenSize.width - spacing * 4) / 3;
+    CGFloat bottom1 = 55 + UIApplication.sharedApplication.keyWindow.safeAreaInsets.bottom;
+    CGFloat width1 = screenSize.width;
+    CGFloat top1 = screenSize.height - width1 - bottom1;
+    CGRect rect1 = CGRectMake(0, top1, width1, width1);
 
--(void) playBeep:(CDVInvokedUrlCommand *)command
-{
-    UIImpactFeedbackGenerator *feedBackGenertor = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight];
-    [feedBackGenertor impactOccurred];
+    CGFloat width2 = screenSize.width, height2 = 30;
+    CGFloat top2 = top1 - height2 -17;
+    CGRect rect2 = CGRectMake(0, top2, width2, height2);
+
+    TQGestureLockDrawManager *drawManager = [TQGestureLockDrawManager defaultManager];
+    drawManager.circleDiameter = diameter;
+    drawManager.edgeSpacingInsets = UIEdgeInsetsMake(spacing, spacing, spacing, spacing);
+    drawManager.bridgingLineWidth = 0.5;
+    drawManager.hollowCircleBorderWidth = 0.5;
+
+    _lockView = [[TQGestureLockView alloc] initWithFrame:rect1 drawManager:drawManager];
+    _lockView.delegate = self;
+    [_backdropView addSubview:_lockView];
 }
-
-- (void)getSystemInfo:(CDVInvokedUrlCommand*)command
+- (void)hide:(CDVInvokedUrlCommand *)command
 {
-    BOOL is_debug = false;
-    BOOL is_iphonex = false;
-
-    #ifdef DEBUG
-        is_debug = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK  messageAsBool:(true)];
-    #endif
-    CGFloat safeBottom =  UIApplication.sharedApplication.keyWindow.safeAreaInsets.bottom;
-    if(safeBottom > 0.0){
-        is_iphonex = true;
-    }
-    [self send_event:command withMessage:@{
-        @"is_debug":@(is_debug),
-        @"is_iphonex":@(is_iphonex),
-        @"auth": [self settingForKey:@"authkey"],
-    } Alive:NO State:YES];
+    [_lockView removeFromSuperview];
+    [_backdropView removeFromSuperview];
+    _cdvcommand = nil;
 }
 
 
+#pragma mark - TQGestureLockViewDelegate
 
-- (id)settingForKey:(NSString*)key
+- (void)gestureLockView:(TQGestureLockView *)gestureLockView lessErrorSecurityCodeSting:(NSString *)securityCodeSting
 {
-    return [self.commandDelegate.settings objectForKey:[key lowercaseString]];
+    [gestureLockView setNeedsDisplayGestureLockErrorState:YES];
 }
+
+- (void)gestureLockView:(TQGestureLockView *)gestureLockView finalRightSecurityCodeSting:(NSString *)securityCodeSting
+{
+    [gestureLockView setNeedsDisplayGestureLockErrorState:NO];
+    NSLog(@"securityCodeSting: %@",securityCodeSting);
+    [self send_event:_cdvcommand withMessage:@{@"code":securityCodeSting} Alive:NO State:YES];
+}
+
 
 - (void)send_event:(CDVInvokedUrlCommand *)command withMessage:(NSDictionary *)message Alive:(BOOL)alive State:(BOOL)state{
     CDVPluginResult* res = [CDVPluginResult resultWithStatus: (state ? CDVCommandStatus_OK : CDVCommandStatus_ERROR) messageAsDictionary:message];
