@@ -1,14 +1,11 @@
 #import <Cordova/CDV.h>
-#import "CDVLocalWWW.h"
-#import "SSZipArchive.h"
-#import <JGProgressHUD/JGProgressHUD.h>
+#import "showGestureLockView.h"
 
-@interface CDVLocalWWW()
-@property (nonatomic,strong) JGProgressHUD* hud;
+@interface showGestureLockView()
 @end
 
-@implementation CDVLocalWWW
-- (void)pluginInitialize
+@implementation showGestureLockView
+- (void)showGestureLockView
 {
     NSLog(@"--------------- init CDVLocalWWWW --------");
 

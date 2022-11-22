@@ -1,4 +1,4 @@
 #import <Cordova/CDVPlugin.h>
-@interface CDVLocalWWW : CDVPlugin {}
+@interface showGestureLockView : CDVPlugin {}
 
 @end
