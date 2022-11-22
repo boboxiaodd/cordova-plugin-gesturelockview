@@ -1,0 +1,14 @@
+{
+    "name": "www",
+    "version": "0.0.1",
+    "description": "Local WWW Manage",
+    "cordova": {
+        "id": "www",
+        "platforms": [
+            "ios"
+        ]
+    },
+    "keywords": [],
+    "author": "bobo",
+    "license": "MIT"
+}
