@@ -1,9 +1,9 @@
 {
-    "name": "www",
+    "name": "gesturelockview",
     "version": "0.0.1",
-    "description": "Local WWW Manage",
+    "description": "Gesture Lock View",
     "cordova": {
-        "id": "www",
+        "id": "gesturelockview",
         "platforms": [
             "ios"
         ]
